@@ -4,21 +4,22 @@ name: Get Unity License (.alf)
 # After that, use build-android.yml to build the APK.
 
 on:
-  workflow_dispatch: {}   # Manual trigger only
+  workflow_dispatch: {}
 
 jobs:
   activation:
     name: Request Unity License
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04      # pinned – avoids ubuntu-26 Docker issues
     steps:
       - uses: actions/checkout@v4
 
-      - name: Request activation file (.alf)
-        id: getManualLicenseFile
+      - name: Get Unity activation file (.alf)
         uses: game-ci/unity-activate@v2
+        id: activation
 
-      - name: Upload .alf file (download from Artifacts)
+      - name: Upload .alf (download from Actions > Artifacts)
         uses: actions/upload-artifact@v4
         with:
-          name: unity-license-alf
-          path: ${{ steps.getManualLicenseFile.outputs.filePath }}
+          name: unity-license-activation-file
+          path: ${{ steps.activation.outputs.filePath }}
+          retention-days: 5

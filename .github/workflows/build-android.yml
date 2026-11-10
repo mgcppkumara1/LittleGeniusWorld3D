@@ -1,23 +1,21 @@
 name: Build Android APK
 
 on:
-  workflow_dispatch: {}          # Manual trigger
+  workflow_dispatch: {}
   push:
-    branches: [main]             # Auto-build on every push to main
+    branches: [main]
 
 jobs:
   build:
     name: Build for Android
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04      # pinned for Docker + IL2CPP stability
 
     steps:
-      # ── 1. Checkout ──────────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           lfs: false
 
-      # ── 2. Cache Library folder (speeds up repeat builds) ────────
       - name: Cache Unity Library
         uses: actions/cache@v4
         with:
@@ -27,23 +25,20 @@ jobs:
             Library-Android-
             Library-
 
-      # ── 3. Build with GameCI ─────────────────────────────────────
       - name: Build Android APK
         uses: game-ci/unity-builder@v4
         env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_EMAIL:   ${{ secrets.UNITY_EMAIL }}
+          UNITY_LICENSE:  ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL:    ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
-          unityVersion: 6000.0.0f1
-          targetPlatform: Android
-          androidExportType: androidPackage      # outputs .apk
-          androidKeystoreName: ""               # debug-signed (no keystore needed)
-          buildMethod: LGWBuild.BuildApk
-          buildsPath: Builds
+          unityVersion:      6000.0.0f1
+          targetPlatform:    Android
+          androidExportType: androidPackage
+          buildMethod:       LGWBuild.BuildApk
+          buildsPath:        Builds
 
-      # ── 4. Upload APK as downloadable Artifact ───────────────────
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: LittleGeniusWorld3D-APK
