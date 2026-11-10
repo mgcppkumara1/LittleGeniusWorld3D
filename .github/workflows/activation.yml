@@ -5,19 +5,43 @@ on:
 
 jobs:
   activation:
-    name: Request Unity License
+    name: Generate Unity .alf file
     runs-on: ubuntu-22.04
+
     steps:
       - uses: actions/checkout@v4
 
-      # Use unity-request-activation-file which doesn't need Docker
-      - name: Request activation file (.alf)
-        uses: game-ci/unity-request-activation-file@v2
-        id: getManualLicenseFile
+      - name: Pull Unity Docker image and generate .alf
+        run: |
+          docker pull unityci/editor:ubuntu-6000.0.0f1-android-3 2>/dev/null || \
+          docker pull unityci/editor:6000.0.0f1-android-3 || \
+          docker pull unityci/editor:ubuntu-6000.0.0f1-base-3
+          
+          docker run --rm \
+            -v "${{ github.workspace }}:/project" \
+            unityci/editor:ubuntu-6000.0.0f1-base-3 \
+            unity-editor \
+              -batchmode \
+              -createManualActivationFile \
+              -logFile /project/activation.log \
+              -quit || true
+          
+          ls -la /project/*.alf 2>/dev/null || echo "No .alf found, checking log..."
+          cat /project/activation.log 2>/dev/null || true
 
       - name: Upload .alf file
         uses: actions/upload-artifact@v4
         with:
           name: unity-license-activation-file
-          path: ${{ steps.getManualLicenseFile.outputs.filePath }}
+          path: "*.alf"
+          if-no-files-found: warn
           retention-days: 5
+      
+      - name: Upload activation log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: activation-log
+          path: activation.log
+          if-no-files-found: ignore
+          retention-days: 3
